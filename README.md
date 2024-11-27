@@ -17,8 +17,8 @@ A modern web application for managing and assigning roles in the party game Mafi
 - Host controls for managing the game
 
 ### Room Management
-- Password-protected rooms (coming soon)
-- Kick/ban functionality for hosts (coming soon)
+- Password-protected rooms
+- Kick/ban functionality for hosts 
 
 ### Player Experience
 - Role reveal animations

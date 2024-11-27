@@ -16,6 +16,7 @@ from datetime import timedelta
 from django.db.models import F
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from django.urls import reverse
 
 def home(request):
     return render(request, 'myapp/home.html')
@@ -40,7 +41,7 @@ def join_room(request):
         room_form = JoinRoomForm(request.POST)
         player_form = PlayerForm(request.POST)
         
-        if room_form.is_valid() and player_form.is_valid():
+        if room_form.is_valid() and (request.user.is_authenticated or player_form.is_valid()):
             room_code = room_form.cleaned_data['room_code']
             password = room_form.cleaned_data['password']
             
@@ -77,7 +78,6 @@ def join_room(request):
                     )
                     room.temp_players.add(player)
                 
-                # Remove WebSocket update for now
                 return redirect('waiting_room', room_code=room_code)
             except Room.DoesNotExist:
                 messages.error(request, 'Invalid room code')
@@ -187,12 +187,40 @@ def leave_room(request, room_code):
 def get_player_list(request, room_code):
     room = get_object_or_404(Room, room_code=room_code)
     players = list(room.players.all()) + list(room.temp_players.all())
+    is_host = request.user.is_authenticated and request.user == room.host
+    
+    # Add player count badge HTML
+    player_count_html = f'''
+        <h3>
+            <i class="fas fa-users me-2"></i>Players
+            <span class="badge bg-primary">{len(players)}</span>
+        </h3>
+    '''
     
     player_list_html = ''
     for player in players:
         if hasattr(player, 'username'):
             name = player.username
-            host_badge = '<span class="badge bg-primary"><i class="fas fa-crown me-1"></i>Host</span>' if player == room.host else ''
+            # Only show kick/ban for authenticated users
+            if is_host and player != room.host:
+                host_badge = f'''
+                    <div class="btn-group">
+                        <a href="{reverse("kick_player", kwargs={"room_code": room.room_code, "player_id": player.id})}"
+                           class="btn btn-sm btn-warning"
+                           onclick="return confirm('Are you sure you want to kick {player.username}?')">
+                            <i class="fas fa-user-times me-1"></i>Kick
+                        </a>
+                        <a href="{reverse('ban_player', kwargs={'room_code': room.room_code, 'player_id': player.id})}"
+                           class="btn btn-sm btn-danger"
+                           onclick="return confirm('Are you sure you want to ban {player.username}? They will not be able to rejoin this room.')">
+                            <i class="fas fa-ban me-1"></i>Ban
+                        </a>
+                    </div>
+                '''
+            elif player == room.host:
+                host_badge = '<span class="badge bg-primary"><i class="fas fa-crown me-1"></i>Host</span>'
+            else:
+                host_badge = ''
         else:
             name = player.name
             host_badge = ''
@@ -209,6 +237,7 @@ def get_player_list(request, room_code):
     
     return JsonResponse({
         'player_list_html': player_list_html,
+        'player_count_html': player_count_html,
         'roles_assigned': roles_assigned,
         'total_players': len(players)
     })
