@@ -17,6 +17,7 @@ from django.db.models import F
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.urls import reverse
+from .utils import get_device_type
 
 def home(request):
     return render(request, 'myapp/home.html')
@@ -111,6 +112,7 @@ def _get_player_list_html(room):
 def waiting_room(request, room_code):
     room = get_object_or_404(Room, room_code=room_code)
     is_host = request.user.is_authenticated and request.user == room.host
+    device_type = get_device_type(request)
     
     # Get all players (both authenticated and temporary)
     players = list(room.players.all()) + list(room.temp_players.all())
@@ -119,6 +121,7 @@ def waiting_room(request, room_code):
         'room': room,
         'is_host': is_host,
         'players': players,
+        'device_type': device_type,
     }
     return render(request, 'myapp/waiting_room.html', context)
 
