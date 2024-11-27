@@ -19,13 +19,11 @@ A modern web application for managing and assigning roles in the party game Mafi
 ### Room Management
 - Password-protected rooms (coming soon)
 - Kick/ban functionality for hosts (coming soon)
-- Room timer countdown (coming soon)
-- Save favorite role configurations (coming soon)
 
 ### Player Experience
 - Role reveal animations
 - Team identification for Mafia members
-- Dark mode support (coming soon)
+- Dark mode support
 - Mobile-responsive design
 
 ## 🛠️ Tech Stack
