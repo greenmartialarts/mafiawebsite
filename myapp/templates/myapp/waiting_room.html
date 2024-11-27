@@ -60,8 +60,7 @@
                                     <i class="fas fa-exclamation-circle me-2"></i>
                                     <span id="roleErrorMessage"></span>
                                 </div>
-                                <a href="{% url 'assign_roles' room_code=room.room_code %}" 
-                                   class="btn btn-primary w-100 hover-effect">
+                                <a href="#" onclick="startGame(event)" class="btn btn-primary w-100 hover-effect">
                                     <i class="fas fa-play me-2"></i>Start Game
                                 </a>
                             </div>
@@ -175,5 +174,58 @@
 
     setInterval(updatePlayerList, 1000);
     updatePlayerList();
+
+    function startGame(event) {
+        event.preventDefault();
+        
+        const mafiaCount = document.getElementById('mafiaCount').value;
+        const doctorCount = document.getElementById('doctorCount').value;
+        const copCount = document.getElementById('copCount').value;
+        
+        // Validate role counts
+        const totalPlayers = document.querySelectorAll('#playerList .list-group-item').length;
+        const totalSpecialRoles = parseInt(mafiaCount) + parseInt(doctorCount) + parseInt(copCount);
+        
+        if (totalSpecialRoles >= totalPlayers) {
+            alert('Total special roles must be less than the number of players');
+            return;
+        }
+        
+        if (totalPlayers < 4) {
+            alert('Need at least 4 players to start the game');
+            return;
+        }
+        
+        if (mafiaCount < 1) {
+            alert('Must have at least 1 mafia');
+            return;
+        }
+        
+        // Update the room settings before assigning roles
+        fetch(`/room/{{ room.room_code }}/update-roles/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                mafia_count: mafiaCount,
+                doctor_count: doctorCount,
+                cop_count: copCount
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/room/{{ room.room_code }}/assign-roles/`;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while starting the game');
+        });
+    }
 </script>
 {% endblock %} 

@@ -18,6 +18,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.urls import reverse
 from .utils import get_device_type
+from django.views.decorators.http import require_POST
 
 def home(request):
     return render(request, 'myapp/home.html')
@@ -437,3 +438,45 @@ def mark_role_viewed(request, room_code):
         return JsonResponse({'redirect': True})
     
     return JsonResponse({'redirect': False})
+
+@require_POST
+def update_roles(request, room_code):
+    try:
+        room = get_object_or_404(Room, room_code=room_code)
+        if request.user != room.host:
+            return JsonResponse({'success': False, 'error': 'Only the host can update roles'})
+        
+        data = json.loads(request.body)
+        
+        # Update room settings
+        room.mafia_count = int(data.get('mafia_count', 1))
+        room.doctor_count = int(data.get('doctor_count', 0))
+        room.cop_count = int(data.get('cop_count', 0))
+        
+        # Validate role counts
+        total_players = room.players.count() + room.temp_players.count()
+        total_special_roles = room.mafia_count + room.doctor_count + room.cop_count
+        
+        if total_special_roles >= total_players:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Total special roles must be less than number of players'
+            })
+        
+        if total_players < 4:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Need at least 4 players to start the game'
+            })
+        
+        if room.mafia_count < 1:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Must have at least 1 mafia'
+            })
+        
+        room.save()
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
