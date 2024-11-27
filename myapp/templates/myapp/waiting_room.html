@@ -40,30 +40,39 @@
                     <div class="col-md-4">
                         {% if is_host %}
                             <div class="mb-4">
-                                <h4>Role Settings</h4>
-                                <div class="mb-3">
+                                <h4 class="text-primary mb-3">Role Settings</h4>
+                                <div class="mb-3 input-group-hover">
                                     <label class="form-label">Mafia Count</label>
-                                    <input type="number" class="form-control bg-dark text-light" id="mafiaCount" value="{{ room.mafia_count }}" min="1" max="5">
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" 
+                                           id="mafiaCount" value="{{ room.mafia_count }}" min="1" max="5">
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3 input-group-hover">
                                     <label class="form-label">Doctor Count</label>
-                                    <input type="number" class="form-control bg-dark text-light" id="doctorCount" value="{{ room.doctor_count }}" min="0" max="2">
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" 
+                                           id="doctorCount" value="{{ room.doctor_count }}" min="0" max="2">
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3 input-group-hover">
                                     <label class="form-label">Cop Count</label>
-                                    <input type="number" class="form-control bg-dark text-light" id="copCount" value="{{ room.cop_count }}" min="0" max="2">
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" 
+                                           id="copCount" value="{{ room.cop_count }}" min="0" max="2">
                                 </div>
-                                <button onclick="assignRoles()" class="btn btn-primary w-100">
+                                <div id="roleError" class="alert alert-danger d-none">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    <span id="roleErrorMessage"></span>
+                                </div>
+                                <a href="{% url 'assign_roles' room_code=room.room_code %}" 
+                                   class="btn btn-primary w-100 hover-effect">
                                     <i class="fas fa-play me-2"></i>Start Game
-                                </button>
+                                </a>
                             </div>
                         {% else %}
-                            <div class="alert alert-info" id="waitingMessage">
+                            <div class="alert alert-info bg-dark text-info border-info" id="waitingMessage">
                                 <i class="fas fa-info-circle me-2"></i>Waiting for host to start the game...
                             </div>
                         {% endif %}
                         
-                        <a href="{% url 'leave_room' room_code=room.room_code %}" class="btn btn-danger w-100">
+                        <a href="{% url 'leave_room' room_code=room.room_code %}" 
+                           class="btn btn-danger w-100 hover-effect">
                             <i class="fas fa-door-open me-2"></i>Leave Room
                         </a>
                     </div>
@@ -72,6 +81,63 @@
         </div>
     </div>
 </div>
+
+<style>
+.hover-effect {
+    transition: all 0.3s ease;
+    transform: scale(1);
+}
+
+.hover-effect:hover {
+    transform: scale(1.05);
+}
+
+.input-group-hover {
+    transition: all 0.3s ease;
+}
+
+.input-group-hover:focus-within {
+    transform: translateX(10px);
+}
+
+.form-control {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: scale(1.02);
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.list-group-item {
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    transform: translateX(5px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}
+</style>
 
 <script>
     function updatePlayerList() {
@@ -84,9 +150,7 @@
                 playerList.innerHTML = data.player_list_html;
                 playerCountContainer.innerHTML = data.player_count_html;
                 
-                // Check if roles have been assigned
                 if (data.roles_assigned) {
-                    // Show loading message before redirect
                     const loadingHtml = `
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-3" role="status">
@@ -96,115 +160,20 @@
                         </div>
                     `;
                     
-                    // Update the waiting message for non-host players
                     const waitingMessage = document.getElementById('waitingMessage');
                     if (waitingMessage) {
                         waitingMessage.innerHTML = loadingHtml;
                     }
                     
-                    // Redirect all players to their role display
                     setTimeout(() => {
                         window.location.href = '/role/{{ room.room_code }}/';
                     }, 1500);
-                }
-                
-                // Update validation if host
-                if (typeof validateRoles === 'function') {
-                    validateRoles();
                 }
             })
             .catch(error => console.error('Error:', error));
     }
 
-    // Update every second
     setInterval(updatePlayerList, 1000);
-
-    // Initial update
     updatePlayerList();
-
-    function validateRoles() {
-        const mafiaCount = parseInt(document.getElementById('mafiaCount').value) || 0;
-        const doctorCount = parseInt(document.getElementById('doctorCount').value) || 0;
-        const copCount = parseInt(document.getElementById('copCount').value) || 0;
-        const totalPlayers = document.querySelectorAll('#playerList .list-group-item').length;
-        const totalSpecialRoles = mafiaCount + doctorCount + copCount;
-        const assignButton = document.getElementById('assignRolesBtn');
-        const roleError = document.getElementById('roleError');
-        const roleErrorMessage = document.getElementById('roleErrorMessage');
-
-        let isValid = true;
-        let errorMessage = '';
-
-        if (totalSpecialRoles >= totalPlayers) {
-            isValid = false;
-            errorMessage = 'Total special roles must be less than the number of players';
-        } else if (totalPlayers < 4) {
-            isValid = false;
-            errorMessage = 'Need at least 4 players to start the game';
-        } else if (mafiaCount < 1) {
-            isValid = false;
-            errorMessage = 'Must have at least 1 mafia';
-        }
-
-        assignButton.disabled = !isValid;
-        if (!isValid) {
-            roleError.style.display = 'block';
-            roleErrorMessage.textContent = errorMessage;
-        } else {
-            roleError.style.display = 'none';
-        }
-    }
-
-    // Add event listeners for kick/ban buttons
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.closest('a[href*="kick_player"]')) {
-            if (!confirm('Are you sure you want to kick this player?')) {
-                e.preventDefault();
-            }
-        }
-        if (e.target && e.target.closest('a[href*="ban_player"]')) {
-            if (!confirm('Are you sure you want to ban this player? They will not be able to rejoin this room.')) {
-                e.preventDefault();
-            }
-        }
-    });
 </script>
-
-<style>
-    #roleError {
-        transition: all 0.3s ease;
-    }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .spinner-border {
-        width: 3rem;
-        height: 3rem;
-    }
-
-    /* Add some spacing between buttons in the group */
-    .btn-group .btn:not(:last-child) {
-        margin-right: 4px;
-    }
-    
-    /* Make buttons more compact */
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-    
-    /* Add hover effects */
-    .btn-warning:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-    }
-    
-    .btn-danger:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-    }
-</style>
 {% endblock %} 

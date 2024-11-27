@@ -3,46 +3,58 @@
 {% block content %}
 <div class="row justify-content-center fade-in">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header text-center">
-                <h2 class="mb-0">Role Display</h2>
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header text-center border-secondary">
+                <h2 class="mb-0">
+                    <i class="fas fa-theater-masks me-2"></i>Role Display
+                </h2>
             </div>
             <div class="card-body text-center py-5" id="roleContent">
                 {% if current_player %}
                     {% if show_role %}
-                        <h3 class="mb-4">{{ current_player.name }}'s Role</h3>
-                        <div class="role-icon mb-4">
+                        <h3 class="mb-4 text-primary">{{ current_player.name }}'s Role</h3>
+                        <div class="role-icon mb-4 animate__animated animate__bounceIn">
                             {% if role_assignment.role == 'MAFIA' %}
-                                <i class="fas fa-skull fa-4x text-danger"></i>
+                                <i class="fas fa-skull fa-4x text-danger glow-danger"></i>
                             {% elif role_assignment.role == 'DOCTOR' %}
-                                <i class="fas fa-user-md fa-4x text-success"></i>
+                                <i class="fas fa-user-md fa-4x text-success glow-success"></i>
                             {% elif role_assignment.role == 'COP' %}
-                                <i class="fas fa-shield-alt fa-4x text-primary"></i>
+                                <i class="fas fa-shield-alt fa-4x text-primary glow-primary"></i>
                             {% else %}
-                                <i class="fas fa-user fa-4x text-secondary"></i>
+                                <i class="fas fa-user fa-4x text-light glow-light"></i>
                             {% endif %}
                         </div>
-                        <h3 class="mb-4">You are a {{ role_assignment.role }}</h3>
+                        <h3 class="mb-4 role-text">
+                            You are a 
+                            <span class="
+                                {% if role_assignment.role == 'MAFIA' %}text-danger
+                                {% elif role_assignment.role == 'DOCTOR' %}text-success
+                                {% elif role_assignment.role == 'COP' %}text-primary
+                                {% else %}text-light{% endif %}
+                            ">
+                                {{ role_assignment.role }}
+                            </span>
+                        </h3>
                         
-                        <button class="btn btn-primary btn-lg" onclick="hideAndContinue()">
+                        <button class="btn btn-primary btn-lg hover-effect" onclick="hideAndContinue()">
                             <i class="fas fa-eye-slash me-2"></i>I've Seen My Role
                         </button>
                     {% else %}
-                        <h3 class="mb-4">{{ current_player.name }}'s Turn</h3>
-                        <div class="alert alert-info mb-4">
+                        <h3 class="mb-4 text-warning">{{ current_player.name }}'s Turn</h3>
+                        <div class="alert alert-info bg-dark text-info border-info mb-4">
                             <i class="fas fa-info-circle me-2"></i>
                             Make sure only {{ current_player.name }} can see the screen
                         </div>
-                        <button class="btn btn-primary btn-lg" onclick="showRole()">
+                        <button class="btn btn-primary btn-lg hover-effect" onclick="showRole()">
                             <i class="fas fa-eye me-2"></i>Show My Role
                         </button>
                     {% endif %}
                 {% else %}
-                    <div class="alert alert-success">
-                        <h4>All players on this device have seen their roles!</h4>
-                        <p>You can now start playing the game.</p>
+                    <div class="alert alert-success bg-dark text-success border-success">
+                        <h4><i class="fas fa-check-circle me-2"></i>All players on this device have seen their roles!</h4>
+                        <p class="mb-0">You can now start playing the game.</p>
                     </div>
-                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg mt-3 hover-effect">
                         <i class="fas fa-home me-2"></i>Go Home
                     </a>
                 {% endif %}
@@ -50,6 +62,59 @@
         </div>
     </div>
 </div>
+
+<style>
+.hover-effect {
+    transition: all 0.3s ease;
+    transform: scale(1);
+}
+
+.hover-effect:hover {
+    transform: scale(1.05);
+}
+
+.glow-danger {
+    filter: drop-shadow(0 0 10px rgba(220, 53, 69, 0.5));
+}
+
+.glow-success {
+    filter: drop-shadow(0 0 10px rgba(40, 167, 69, 0.5));
+}
+
+.glow-primary {
+    filter: drop-shadow(0 0 10px rgba(0, 123, 255, 0.5));
+}
+
+.glow-light {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.role-text {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.animate__animated {
+    animation-duration: 1s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+</style>
 
 <script>
 function showRole() {

@@ -5,6 +5,8 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕵️‍♂️</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         /* Theme Variables */
         html[data-theme="light"] {
@@ -85,6 +87,130 @@
         .theme-toggle:hover {
             transform: rotate(360deg);
             background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 740px) {
+            .container {
+                padding: 10px;
+            }
+
+            .card {
+                margin: 10px 0;
+                border-radius: 10px;
+            }
+
+            .btn {
+                padding: 12px 20px;  /* Larger touch targets */
+                margin: 5px 0;
+                width: 100%;  /* Full width buttons on mobile */
+            }
+
+            .form-control {
+                height: 45px;  /* Larger input fields */
+                font-size: 16px;  /* Prevent iOS zoom on focus */
+            }
+
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .display-4 {
+                font-size: 2rem;  /* Smaller headers on mobile */
+            }
+
+            .lead {
+                font-size: 1.1rem;
+            }
+
+            /* Adjust spacing for mobile */
+            .mb-4 {
+                margin-bottom: 1rem !important;
+            }
+
+            .py-5 {
+                padding-top: 2rem !important;
+                padding-bottom: 2rem !important;
+            }
+
+            /* Improve touch targets */
+            .list-group-item {
+                padding: 15px;
+            }
+
+            /* Adjust card columns for mobile */
+            .col-md-6, .col-md-8 {
+                padding: 0 10px;
+            }
+
+            /* Better mobile scrolling */
+            .card-body {
+                -webkit-overflow-scrolling: touch;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+
+            /* Prevent horizontal scroll */
+            .row {
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            /* Improve form elements on mobile */
+            select.form-control {
+                padding-right: 25px;
+            }
+
+            /* Adjust alerts for mobile */
+            .alert {
+                padding: 12px;
+                margin: 10px 0;
+            }
+
+            /* Improve mobile navigation */
+            .navbar {
+                padding: 10px;
+            }
+
+            .navbar-toggler {
+                padding: 8px;
+                margin-right: 5px;
+            }
+
+            /* Adjust icons for mobile */
+            .fa-4x {
+                font-size: 3em;
+            }
+
+            /* Improve mobile animations */
+            .hover-effect:hover {
+                transform: scale(1.02);  /* Smaller scale on mobile */
+            }
+
+            .input-group-hover:focus-within {
+                transform: translateX(5px);  /* Smaller translation on mobile */
+            }
+
+            /* Improve mobile dark mode */
+            .bg-dark {
+                background-color: #1a1a1a !important;
+            }
+
+            /* Improve touch feedback */
+            .btn:active {
+                transform: scale(0.98);
+            }
+
+            /* Prevent sticky hover states */
+            @media (hover: none) {
+                .hover-effect:hover {
+                    transform: none;
+                }
+                
+                .list-group-item:hover {
+                    transform: none;
+                }
+            }
         }
 
         /* Rest of your existing styles... */
