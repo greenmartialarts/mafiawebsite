@@ -1,0 +1,53 @@
+{% extends 'myapp/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">
+                    <i class="fas fa-door-open me-2"></i>Join Room
+                </h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-key me-2"></i>Room Code
+                        </label>
+                        {{ room_form.room_code.errors }}
+                        {% render_field room_form.room_code class="form-control" %}
+                        <small class="form-text text-muted">
+                            Enter the 6-character room code
+                        </small>
+                    </div>
+
+                    {% if not user.is_authenticated %}
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-user me-2"></i>Your Name
+                        </label>
+                        {{ player_form.name.errors }}
+                        {% render_field player_form.name class="form-control" %}
+                        <small class="form-text text-muted">
+                            Choose a name for this game session
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Join Room
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

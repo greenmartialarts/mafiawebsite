@@ -1,0 +1,209 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">{{ room.room_name }}</h2>
+                        <p class="mb-0 mt-2">
+                            <i class="fas fa-key me-2"></i>Room Code: 
+                            <span class="badge bg-light text-dark">{{ room.room_code }}</span>
+                        </p>
+                    </div>
+                    <a href="{% url 'leave_room' room_code=room.room_code %}" 
+                       class="btn btn-danger">
+                        <i class="fas fa-door-open me-2"></i>Leave Room
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h3>
+                        <i class="fas fa-users me-2"></i>Players
+                        <span class="badge bg-primary">{{ players|length }}</span>
+                    </h3>
+                    <ul class="list-group mb-4" id="playerList">
+                        {% for player in players %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-user me-2"></i>
+                                    {% if player.username %}
+                                        {{ player.username }}
+                                    {% else %}
+                                        {{ player.name }}
+                                    {% endif %}
+                                </span>
+                                {% if player == room.host %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-crown me-1"></i>Host
+                                    </span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                {% if is_host %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h4 class="mb-4">
+                                <i class="fas fa-cog me-2"></i>Game Settings
+                            </h4>
+                            <form method="post" action="{% url 'assign_roles' room_code=room.room_code %}" id="assignRolesForm">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-skull me-2"></i>Mafia Count
+                                            </label>
+                                            <input type="number" name="mafia_count" id="mafiaCount"
+                                                   value="{{ room.mafia_count }}" min="1" 
+                                                   class="form-control role-count">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-user-md me-2"></i>Doctor Count
+                                            </label>
+                                            <input type="number" name="doctor_count" id="doctorCount"
+                                                   value="{{ room.doctor_count }}" min="0"
+                                                   class="form-control role-count">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-shield-alt me-2"></i>Cop Count
+                                            </label>
+                                            <input type="number" name="cop_count" id="copCount"
+                                                   value="{{ room.cop_count }}" min="0"
+                                                   class="form-control role-count">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-danger mt-3" id="roleError" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="roleErrorMessage"></span>
+                                </div>
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="assignRolesBtn">
+                                        <i class="fas fa-play me-2"></i>Start Game
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center" id="waitingMessage">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h4>Waiting for host to start the game...</h4>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updatePlayerList() {
+        fetch('/room/{{ room.room_code }}/players/')
+            .then(response => response.json())
+            .then(data => {
+                const playerList = document.getElementById('playerList');
+                playerList.innerHTML = data.player_list_html;
+                
+                // Check if roles have been assigned
+                if (data.roles_assigned) {
+                    // Show loading message before redirect
+                    const loadingHtml = `
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h4>Roles assigned! Redirecting to role display...</h4>
+                        </div>
+                    `;
+                    
+                    // Update the waiting message for non-host players
+                    const waitingMessage = document.getElementById('waitingMessage');
+                    if (waitingMessage) {
+                        waitingMessage.innerHTML = loadingHtml;
+                    }
+                    
+                    // Redirect all players to their role display
+                    setTimeout(() => {
+                        window.location.href = '/role/{{ room.room_code }}/';
+                    }, 1500);
+                }
+                
+                // Update validation if host
+                if (typeof validateRoles === 'function') {
+                    validateRoles();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Update every second
+    setInterval(updatePlayerList, 1000);
+
+    // Initial update
+    updatePlayerList();
+
+    function validateRoles() {
+        const mafiaCount = parseInt(document.getElementById('mafiaCount').value) || 0;
+        const doctorCount = parseInt(document.getElementById('doctorCount').value) || 0;
+        const copCount = parseInt(document.getElementById('copCount').value) || 0;
+        const totalPlayers = document.querySelectorAll('#playerList .list-group-item').length;
+        const totalSpecialRoles = mafiaCount + doctorCount + copCount;
+        const assignButton = document.getElementById('assignRolesBtn');
+        const roleError = document.getElementById('roleError');
+        const roleErrorMessage = document.getElementById('roleErrorMessage');
+
+        let isValid = true;
+        let errorMessage = '';
+
+        if (totalSpecialRoles >= totalPlayers) {
+            isValid = false;
+            errorMessage = 'Total special roles must be less than the number of players';
+        } else if (totalPlayers < 4) {
+            isValid = false;
+            errorMessage = 'Need at least 4 players to start the game';
+        } else if (mafiaCount < 1) {
+            isValid = false;
+            errorMessage = 'Must have at least 1 mafia';
+        }
+
+        assignButton.disabled = !isValid;
+        if (!isValid) {
+            roleError.style.display = 'block';
+            roleErrorMessage.textContent = errorMessage;
+        } else {
+            roleError.style.display = 'none';
+        }
+    }
+</script>
+
+<style>
+    #roleError {
+        transition: all 0.3s ease;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+{% endblock %} 

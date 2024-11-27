@@ -1,0 +1,52 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2 class="mb-0">Your Role</h2>
+            </div>
+            <div class="card-body text-center py-5">
+                <div class="role-icon mb-4">
+                    {% if role_assignment.role == 'MAFIA' %}
+                        <i class="fas fa-skull fa-4x text-danger"></i>
+                    {% elif role_assignment.role == 'DOCTOR' %}
+                        <i class="fas fa-user-md fa-4x text-success"></i>
+                    {% elif role_assignment.role == 'COP' %}
+                        <i class="fas fa-shield-alt fa-4x text-primary"></i>
+                    {% else %}
+                        <i class="fas fa-user fa-4x text-secondary"></i>
+                    {% endif %}
+                </div>
+                <h3 class="mb-4">You are a {{ role_assignment.role }}</h3>
+                <p class="text-muted mb-4">
+                    <i class="fas fa-gamepad me-2"></i>
+                    Room: {{ role_assignment.room.room_name }}
+                </p>
+                <form method="post" action="{% url 'mark_ready' room_code=role_assignment.room.room_code %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check me-2"></i>Ready
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkRoomStatus() {
+        fetch('/room/{{ role_assignment.room.room_code }}/status/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.room_deleted) {
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    setInterval(checkRoomStatus, 1000);
+</script>
+{% endblock %} 

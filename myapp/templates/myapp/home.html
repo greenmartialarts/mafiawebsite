@@ -1,0 +1,39 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="text-center fade-in">
+    <h1 class="display-4 mb-4">Welcome to Mafia Game</h1>
+    <p class="lead mb-5">Join the ultimate game of deception and strategy</p>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body py-5">
+                    {% if user.is_authenticated %}
+                        <div class="d-grid gap-3 col-lg-6 mx-auto">
+                            <a href="{% url 'create_room' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i>Create Room
+                            </a>
+                            <a href="{% url 'join_room' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-door-open me-2"></i>Join Room
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="d-grid gap-3 col-lg-6 mx-auto">
+                            <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </a>
+                            <a href="{% url 'register' %}" class="btn btn-info btn-lg text-white">
+                                <i class="fas fa-user-plus me-2"></i>Register
+                            </a>
+                            <a href="{% url 'join_room' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-door-open me-2"></i>Join as Guest
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
