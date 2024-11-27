@@ -23,6 +23,8 @@ class Room(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     players_ready = models.IntegerField(default=0)
     all_ready_at = models.DateTimeField(null=True, blank=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
+    banned_users = models.ManyToManyField(User, related_name='banned_from_rooms', blank=True)
 
     def clean(self):
         if self.id:
@@ -30,6 +32,12 @@ class Room(models.Model):
             player_count = self.players.count() + self.temp_players.count()
             if total_special_roles >= player_count:
                 raise ValidationError("Number of special roles cannot exceed number of players")
+
+    def is_password_protected(self):
+        return bool(self.password)
+
+    def check_password(self, password):
+        return self.password == password
 
     def __str__(self):
         return f"{self.room_name} ({self.room_code})"

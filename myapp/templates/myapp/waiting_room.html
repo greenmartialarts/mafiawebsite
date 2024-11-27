@@ -36,11 +36,26 @@
                                         {{ player.name }}
                                     {% endif %}
                                 </span>
-                                {% if player == room.host %}
-                                    <span class="badge bg-primary">
-                                        <i class="fas fa-crown me-1"></i>Host
-                                    </span>
-                                {% endif %}
+                                <div>
+                                    {% if player == room.host %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-crown me-1"></i>Host
+                                        </span>
+                                    {% elif is_host and player.username %}
+                                        <div class="btn-group">
+                                            <a href="{% url 'kick_player' room_code=room.room_code player_id=player.id %}"
+                                               class="btn btn-sm btn-warning"
+                                               onclick="return confirm('Are you sure you want to kick {{ player.username }}?')">
+                                                <i class="fas fa-user-times me-1"></i>Kick
+                                            </a>
+                                            <a href="{% url 'ban_player' room_code=room.room_code player_id=player.id %}"
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('Are you sure you want to ban {{ player.username }}? They will not be able to rejoin this room.')">
+                                                <i class="fas fa-ban me-1"></i>Ban
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
@@ -204,6 +219,28 @@
     .spinner-border {
         width: 3rem;
         height: 3rem;
+    }
+
+    /* Add some spacing between buttons in the group */
+    .btn-group .btn:not(:last-child) {
+        margin-right: 4px;
+    }
+    
+    /* Make buttons more compact */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Add hover effects */
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+    
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
     }
 </style>
 {% endblock %} 

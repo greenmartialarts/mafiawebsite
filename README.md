@@ -35,7 +35,7 @@ A modern web application for managing and assigning roles in the party game Mafi
   - JavaScript
   - Bootstrap 5
 - **Database:** SQLite3
-- **Deployment:** (Add your deployment platform)
+- **Deployment:** Anywhere you can run a Django app
 
 ## 🚀 Quick Start
 

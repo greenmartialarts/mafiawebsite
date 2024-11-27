@@ -4,12 +4,24 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
 class RoomCreationForm(forms.ModelForm):
+    password = forms.CharField(
+        max_length=128, 
+        required=False,
+        widget=forms.PasswordInput(),
+        help_text="Optional: Set a password to make this room private"
+    )
+
     class Meta:
         model = Room
-        fields = ['room_name']
+        fields = ['room_name', 'password']
 
 class JoinRoomForm(forms.Form):
     room_code = forms.CharField(max_length=6, min_length=6)
+    password = forms.CharField(
+        max_length=128,
+        required=False,
+        widget=forms.PasswordInput()
+    )
 
 class PlayerForm(forms.ModelForm):
     class Meta:

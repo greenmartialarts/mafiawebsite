@@ -23,23 +23,31 @@
                             Enter the 6-character room code
                         </small>
                     </div>
-
-                    {% if not user.is_authenticated %}
                     <div class="mb-4">
                         <label class="form-label">
-                            <i class="fas fa-user me-2"></i>Your Name
+                            <i class="fas fa-lock me-2"></i>Room Password
                         </label>
-                        {{ player_form.name.errors }}
-                        {% render_field player_form.name class="form-control" %}
+                        {{ room_form.password.errors }}
+                        {% render_field room_form.password class="form-control" %}
                         <small class="form-text text-muted">
-                            Choose a name for this game session
+                            Enter the room password (if required)
                         </small>
                     </div>
+                    {% if not user.is_authenticated %}
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-user me-2"></i>Your Name
+                            </label>
+                            {{ player_form.name.errors }}
+                            {% render_field player_form.name class="form-control" %}
+                            <small class="form-text text-muted">
+                                Enter your display name for the game
+                            </small>
+                        </div>
                     {% endif %}
-
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-sign-in-alt me-2"></i>Join Room
+                            <i class="fas fa-door-open me-2"></i>Join Room
                         </button>
                         <a href="{% url 'home' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Back to Home

@@ -42,8 +42,23 @@ def join_room(request):
         
         if room_form.is_valid() and player_form.is_valid():
             room_code = room_form.cleaned_data['room_code']
+            password = room_form.cleaned_data['password']
+            
             try:
                 room = Room.objects.get(room_code=room_code)
+                
+                # Check if user is banned
+                if request.user.is_authenticated and room.banned_users.filter(id=request.user.id).exists():
+                    messages.error(request, 'You are banned from this room')
+                    return redirect('home')
+                
+                # Check password if room is password protected
+                if room.is_password_protected() and room.password != password:
+                    messages.error(request, 'Invalid password')
+                    return render(request, 'myapp/join_room.html', {
+                        'room_form': room_form,
+                        'player_form': player_form
+                    })
                 
                 # If user is authenticated, use their account
                 if request.user.is_authenticated:
@@ -309,3 +324,44 @@ def bug_detail(request, bug_id):
         messages.error(request, 'You do not have permission to view this bug report.')
         return redirect('bug_list')
     return render(request, 'myapp/bug_detail.html', {'bug': bug})
+
+@login_required
+def kick_player(request, room_code, player_id):
+    room = get_object_or_404(Room, room_code=room_code)
+    if request.user != room.host:
+        messages.error(request, 'Only the host can kick players')
+        return redirect('waiting_room', room_code=room_code)
+    
+    try:
+        player = User.objects.get(id=player_id)
+        if player == room.host:
+            messages.error(request, 'Cannot kick the host')
+            return redirect('waiting_room', room_code=room_code)
+        
+        room.players.remove(player)
+        messages.success(request, f'{player.username} has been kicked')
+    except User.DoesNotExist:
+        messages.error(request, 'Player not found')
+    
+    return redirect('waiting_room', room_code=room_code)
+
+@login_required
+def ban_player(request, room_code, player_id):
+    room = get_object_or_404(Room, room_code=room_code)
+    if request.user != room.host:
+        messages.error(request, 'Only the host can ban players')
+        return redirect('waiting_room', room_code=room_code)
+    
+    try:
+        player = User.objects.get(id=player_id)
+        if player == room.host:
+            messages.error(request, 'Cannot ban the host')
+            return redirect('waiting_room', room_code=room_code)
+        
+        room.players.remove(player)
+        room.banned_users.add(player)
+        messages.success(request, f'{player.username} has been banned')
+    except User.DoesNotExist:
+        messages.error(request, 'Player not found')
+    
+    return redirect('waiting_room', room_code=room_code)

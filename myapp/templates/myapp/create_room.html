@@ -23,6 +23,16 @@
                             Choose a unique name for your game room
                         </small>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-lock me-2"></i>Room Password (Optional)
+                        </label>
+                        {{ form.password.errors }}
+                        {% render_field form.password class="form-control" %}
+                        <small class="form-text text-muted">
+                            {{ form.password.help_text }}
+                        </small>
+                    </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-plus-circle me-2"></i>Create Room
