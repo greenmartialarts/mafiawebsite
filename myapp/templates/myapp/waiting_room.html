@@ -2,127 +2,72 @@
 
 {% block content %}
 <div class="row justify-content-center fade-in">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="mb-0">{{ room.room_name }}</h2>
-                        <p class="mb-0 mt-2">
-                            <i class="fas fa-key me-2"></i>Room Code: 
-                            <span class="badge bg-light text-dark">{{ room.room_code }}</span>
-                        </p>
-                    </div>
-                    <a href="{% url 'leave_room' room_code=room.room_code %}" 
-                       class="btn btn-danger">
-                        <i class="fas fa-door-open me-2"></i>Leave Room
-                    </a>
+    <div class="col-md-8">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header text-center border-secondary">
+                <h2 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Waiting Room
+                </h2>
+                <div class="mt-2">
+                    <span class="badge bg-secondary">Room Code: {{ room.room_code }}</span>
                 </div>
             </div>
             <div class="card-body">
-                <div class="mb-4">
-                    <div id="playerCountContainer">
-                        <h3>
-                            <i class="fas fa-users me-2"></i>Players
-                            <span class="badge bg-primary">{{ players|length }}</span>
-                        </h3>
-                    </div>
-                    <ul class="list-group mb-4" id="playerList">
-                        {% for player in players %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>
-                                    <i class="fas fa-user me-2"></i>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="playerCountContainer">
+                            <h3>
+                                <i class="fas fa-users me-2"></i>Players
+                                <span class="badge bg-primary">{{ players|length }}</span>
+                            </h3>
+                        </div>
+                        <ul class="list-group list-group-flush" id="playerList">
+                            {% for player in players %}
+                                <li class="list-group-item bg-dark text-light border-secondary">
                                     {% if player.username %}
                                         {{ player.username }}
+                                        {% if player == room.host %}
+                                            <span class="badge bg-primary">Host</span>
+                                        {% endif %}
                                     {% else %}
                                         {{ player.name }}
                                     {% endif %}
-                                </span>
-                                <div>
-                                    {% if player == room.host %}
-                                        <span class="badge bg-primary">
-                                            <i class="fas fa-crown me-1"></i>Host
-                                        </span>
-                                    {% elif is_host and player.username %}
-                                        <div class="btn-group">
-                                            <a href="{% url 'kick_player' room_code=room.room_code player_id=player.id %}"
-                                               class="btn btn-sm btn-warning"
-                                               onclick="return confirm('Are you sure you want to kick {{ player.username }}?')">
-                                                <i class="fas fa-user-times me-1"></i>Kick
-                                            </a>
-                                            <a href="{% url 'ban_player' room_code=room.room_code player_id=player.id %}"
-                                               class="btn btn-sm btn-danger"
-                                               onclick="return confirm('Are you sure you want to ban {{ player.username }}? They will not be able to rejoin this room.')">
-                                                <i class="fas fa-ban me-1"></i>Ban
-                                            </a>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
 
-                {% if is_host %}
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h4 class="mb-4">
-                                <i class="fas fa-cog me-2"></i>Game Settings
-                            </h4>
-                            <form method="post" action="{% url 'assign_roles' room_code=room.room_code %}" id="assignRolesForm">
-                                {% csrf_token %}
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">
-                                                <i class="fas fa-skull me-2"></i>Mafia Count
-                                            </label>
-                                            <input type="number" name="mafia_count" id="mafiaCount"
-                                                   value="{{ room.mafia_count }}" min="1" 
-                                                   class="form-control role-count">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">
-                                                <i class="fas fa-user-md me-2"></i>Doctor Count
-                                            </label>
-                                            <input type="number" name="doctor_count" id="doctorCount"
-                                                   value="{{ room.doctor_count }}" min="0"
-                                                   class="form-control role-count">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">
-                                                <i class="fas fa-shield-alt me-2"></i>Cop Count
-                                            </label>
-                                            <input type="number" name="cop_count" id="copCount"
-                                                   value="{{ room.cop_count }}" min="0"
-                                                   class="form-control role-count">
-                                        </div>
-                                    </div>
+                    <div class="col-md-4">
+                        {% if is_host %}
+                            <div class="mb-4">
+                                <h4>Role Settings</h4>
+                                <div class="mb-3">
+                                    <label class="form-label">Mafia Count</label>
+                                    <input type="number" class="form-control bg-dark text-light" id="mafiaCount" value="{{ room.mafia_count }}" min="1" max="5">
                                 </div>
-                                <div class="alert alert-danger mt-3" id="roleError" style="display: none;">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <span id="roleErrorMessage"></span>
+                                <div class="mb-3">
+                                    <label class="form-label">Doctor Count</label>
+                                    <input type="number" class="form-control bg-dark text-light" id="doctorCount" value="{{ room.doctor_count }}" min="0" max="2">
                                 </div>
-                                <div class="d-grid gap-2 mt-4">
-                                    <button type="submit" class="btn btn-primary btn-lg" id="assignRolesBtn">
-                                        <i class="fas fa-play me-2"></i>Start Game
-                                    </button>
+                                <div class="mb-3">
+                                    <label class="form-label">Cop Count</label>
+                                    <input type="number" class="form-control bg-dark text-light" id="copCount" value="{{ room.cop_count }}" min="0" max="2">
                                 </div>
-                            </form>
-                        </div>
+                                <button onclick="assignRoles()" class="btn btn-primary w-100">
+                                    <i class="fas fa-play me-2"></i>Start Game
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info" id="waitingMessage">
+                                <i class="fas fa-info-circle me-2"></i>Waiting for host to start the game...
+                            </div>
+                        {% endif %}
+                        
+                        <a href="{% url 'leave_room' room_code=room.room_code %}" class="btn btn-danger w-100">
+                            <i class="fas fa-door-open me-2"></i>Leave Room
+                        </a>
                     </div>
-                {% else %}
-                    <div class="text-center" id="waitingMessage">
-                        <div class="spinner-border text-primary mb-3" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <h4>Waiting for host to start the game...</h4>
-                    </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>

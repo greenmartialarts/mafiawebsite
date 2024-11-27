@@ -5,48 +5,70 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header text-center">
-                <h2 class="mb-0">Your Role</h2>
+                <h2 class="mb-0">Role Display</h2>
             </div>
-            <div class="card-body text-center py-5">
-                <div class="role-icon mb-4">
-                    {% if role_assignment.role == 'MAFIA' %}
-                        <i class="fas fa-skull fa-4x text-danger"></i>
-                    {% elif role_assignment.role == 'DOCTOR' %}
-                        <i class="fas fa-user-md fa-4x text-success"></i>
-                    {% elif role_assignment.role == 'COP' %}
-                        <i class="fas fa-shield-alt fa-4x text-primary"></i>
+            <div class="card-body text-center py-5" id="roleContent">
+                {% if current_player %}
+                    {% if show_role %}
+                        <h3 class="mb-4">{{ current_player.name }}'s Role</h3>
+                        <div class="role-icon mb-4">
+                            {% if role_assignment.role == 'MAFIA' %}
+                                <i class="fas fa-skull fa-4x text-danger"></i>
+                            {% elif role_assignment.role == 'DOCTOR' %}
+                                <i class="fas fa-user-md fa-4x text-success"></i>
+                            {% elif role_assignment.role == 'COP' %}
+                                <i class="fas fa-shield-alt fa-4x text-primary"></i>
+                            {% else %}
+                                <i class="fas fa-user fa-4x text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        <h3 class="mb-4">You are a {{ role_assignment.role }}</h3>
+                        
+                        <button class="btn btn-primary btn-lg" onclick="hideAndContinue()">
+                            <i class="fas fa-eye-slash me-2"></i>I've Seen My Role
+                        </button>
                     {% else %}
-                        <i class="fas fa-user fa-4x text-secondary"></i>
+                        <h3 class="mb-4">{{ current_player.name }}'s Turn</h3>
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Make sure only {{ current_player.name }} can see the screen
+                        </div>
+                        <button class="btn btn-primary btn-lg" onclick="showRole()">
+                            <i class="fas fa-eye me-2"></i>Show My Role
+                        </button>
                     {% endif %}
-                </div>
-                <h3 class="mb-4">You are a {{ role_assignment.role }}</h3>
-                <p class="text-muted mb-4">
-                    <i class="fas fa-gamepad me-2"></i>
-                    Room: {{ role_assignment.room.room_name }}
-                </p>
-                <form method="post" action="{% url 'mark_ready' room_code=role_assignment.room.room_code %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-check me-2"></i>Ready
-                    </button>
-                </form>
+                {% else %}
+                    <div class="alert alert-success">
+                        <h4>All players on this device have seen their roles!</h4>
+                        <p>You can now start playing the game.</p>
+                    </div>
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>Go Home
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function checkRoomStatus() {
-        fetch('/room/{{ role_assignment.room.room_code }}/status/')
-            .then(response => response.json())
-            .then(data => {
-                if (data.room_deleted) {
-                    window.location.href = '/';
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
+function showRole() {
+    window.location.href = '{% url "role_display" room_code=room.room_code %}?show_role=true';
+}
 
-    setInterval(checkRoomStatus, 1000);
+function hideAndContinue() {
+    fetch('/role/{{ room.room_code }}/mark-viewed/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirect) {
+            window.location.href = '{% url "role_display" room_code=room.room_code %}';
+        }
+    });
+}
 </script>
 {% endblock %} 

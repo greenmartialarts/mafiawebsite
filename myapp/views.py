@@ -30,7 +30,19 @@ def create_room(request):
             room.host = request.user
             room.room_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
             room.save()
-            room.players.add(request.user)
+            
+            # Ensure the host has a session key
+            if not request.session.session_key:
+                request.session.create()
+                
+            # Create a Player object for the host
+            host_player = Player.objects.create(
+                name=request.user.username,
+                session_key=request.session.session_key,
+                device_order=0
+            )
+            room.temp_players.add(host_player)
+            
             return redirect('waiting_room', room_code=room.room_code)
     else:
         form = RoomCreationForm()
@@ -39,9 +51,9 @@ def create_room(request):
 def join_room(request):
     if request.method == 'POST':
         room_form = JoinRoomForm(request.POST)
-        player_form = PlayerForm(request.POST)
+        player_count = int(request.POST.get('player_count', 1))
         
-        if room_form.is_valid() and (request.user.is_authenticated or player_form.is_valid()):
+        if room_form.is_valid():
             room_code = room_form.cleaned_data['room_code']
             password = room_form.cleaned_data['password']
             
@@ -57,37 +69,31 @@ def join_room(request):
                 if room.is_password_protected() and room.password != password:
                     messages.error(request, 'Invalid password')
                     return render(request, 'myapp/join_room.html', {
-                        'room_form': room_form,
-                        'player_form': player_form
+                        'room_form': room_form
                     })
                 
-                # If user is authenticated, use their account
-                if request.user.is_authenticated:
-                    player = request.user
-                    room.players.add(player)
-                else:
-                    # Ensure session exists
-                    if not request.session.session_key:
-                        request.session.create()
-                        
-                    # Create a temporary player
-                    player_name = player_form.cleaned_data['name']
-                    player = Player.objects.create(
-                        name=player_name,
-                        session_key=request.session.session_key
-                    )
-                    room.temp_players.add(player)
+                # Create players for this device
+                if not request.session.session_key:
+                    request.session.create()
+                
+                for i in range(player_count):
+                    player_name = request.POST.get(f'player_name_{i}')
+                    if player_name:
+                        player = Player.objects.create(
+                            name=player_name,
+                            session_key=request.session.session_key,
+                            device_order=i
+                        )
+                        room.temp_players.add(player)
                 
                 return redirect('waiting_room', room_code=room_code)
             except Room.DoesNotExist:
                 messages.error(request, 'Invalid room code')
     else:
         room_form = JoinRoomForm()
-        player_form = PlayerForm()
     
     return render(request, 'myapp/join_room.html', {
-        'room_form': room_form,
-        'player_form': player_form
+        'room_form': room_form
     })
 
 def _get_player_list_html(room):
@@ -152,20 +158,34 @@ def assign_roles(request, room_code):
 
 def role_display(request, room_code):
     room = get_object_or_404(Room, room_code=room_code)
+    show_role = request.GET.get('show_role', False)
     
-    # Find role assignment based on user type
-    if request.user.is_authenticated:
-        role_assignment = get_object_or_404(RoleAssignment, user=request.user, room=room)
+    # Get all players for this device
+    session_key = request.session.session_key
+    device_players = Player.objects.filter(
+        session_key=session_key,
+        joined_rooms=room
+    ).order_by('device_order')
+    
+    # Find first player who hasn't viewed their role
+    current_player = device_players.filter(has_viewed_role=False).first()
+    
+    if current_player:
+        role_assignment = get_object_or_404(
+            RoleAssignment,
+            temp_player=current_player,
+            room=room
+        )
     else:
-        # Get the temporary player's role
-        temp_player = room.temp_players.filter(session_key=request.session.session_key).first()
-        if temp_player:
-            role_assignment = get_object_or_404(RoleAssignment, temp_player=temp_player, room=room)
-        else:
-            messages.error(request, 'Player not found')
-            return redirect('home')
+        role_assignment = None
+        show_role = False
     
-    return render(request, 'myapp/role_display.html', {'role_assignment': role_assignment})
+    return render(request, 'myapp/role_display.html', {
+        'room': room,
+        'current_player': current_player,
+        'role_assignment': role_assignment,
+        'show_role': show_role
+    })
 
 def leave_room(request, room_code):
     room = get_object_or_404(Room, room_code=room_code)
@@ -394,3 +414,23 @@ def ban_player(request, room_code, player_id):
         messages.error(request, 'Player not found')
     
     return redirect('waiting_room', room_code=room_code)
+
+def mark_role_viewed(request, room_code):
+    if request.method == 'POST':
+        room = get_object_or_404(Room, room_code=room_code)
+        session_key = request.session.session_key
+        
+        # Get current player
+        current_player = Player.objects.filter(
+            session_key=session_key,
+            joined_rooms=room,
+            has_viewed_role=False
+        ).order_by('device_order').first()
+        
+        if current_player:
+            current_player.has_viewed_role = True
+            current_player.save()
+        
+        return JsonResponse({'redirect': True})
+    
+    return JsonResponse({'redirect': False})

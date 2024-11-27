@@ -33,18 +33,42 @@
                             Enter the room password (if required)
                         </small>
                     </div>
-                    {% if not user.is_authenticated %}
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-users me-2"></i>Number of Players on this Device
+                        </label>
+                        <input type="number" name="player_count" class="form-control" min="1" max="10" value="1">
+                        <small class="form-text text-muted">
+                            Enter how many players will be sharing this device
+                        </small>
+                    </div>
+                    <div id="player-names">
                         <div class="mb-4">
                             <label class="form-label">
-                                <i class="fas fa-user me-2"></i>Your Name
+                                <i class="fas fa-user me-2"></i>Player 1 Name
                             </label>
                             {{ player_form.name.errors }}
                             {% render_field player_form.name class="form-control" %}
-                            <small class="form-text text-muted">
-                                Enter your display name for the game
-                            </small>
                         </div>
-                    {% endif %}
+                    </div>
+                    <script>
+                        document.querySelector('input[name="player_count"]').addEventListener('change', function(e) {
+                            const count = parseInt(e.target.value);
+                            const container = document.getElementById('player-names');
+                            container.innerHTML = '';
+                            
+                            for (let i = 0; i < count; i++) {
+                                container.innerHTML += `
+                                    <div class="mb-4">
+                                        <label class="form-label">
+                                            <i class="fas fa-user me-2"></i>Player ${i + 1} Name
+                                        </label>
+                                        <input type="text" name="player_name_${i}" class="form-control" required>
+                                    </div>
+                                `;
+                            }
+                        });
+                    </script>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-door-open me-2"></i>Join Room
