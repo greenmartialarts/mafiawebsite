@@ -220,7 +220,6 @@ def assign_roles(request, room_code):
 def role_display(request, room_code):
     room = get_object_or_404(Room, room_code=room_code)
     show_role = request.GET.get('show_role', False)
-    device_type = get_device_type(request)
     
     # Get all players for this device
     session_key = request.session.session_key
@@ -250,8 +249,7 @@ def role_display(request, room_code):
         'current_player': current_player,
         'role_assignment': role_assignment,
         'show_role': show_role,
-        'role_info': role_info,
-        'device_type': device_type
+        'role_info': role_info
     })
 
 def leave_room(request, room_code):
