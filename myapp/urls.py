@@ -25,4 +25,5 @@ urlpatterns = [
     path('room/<str:room_code>/ban/<int:player_id>/', views.ban_player, name='ban_player'),
     path('role/<str:room_code>/mark-viewed/', views.mark_role_viewed, name='mark_role_viewed'),
     path('room/<str:room_code>/update-roles/', views.update_roles, name='update_roles'),
+    path('changelog/', views.changelog, name='changelog'),
 ] 

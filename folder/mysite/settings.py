@@ -1,20 +1,14 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-import dj_database_url
-
-   # Load the variables from the .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = 'your-secret-key-here'
 
-DEBUG = os.getenv('DEBUG', default=False)
-
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+DEBUG = False
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -46,7 +40,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             BASE_DIR / 'myapp' / 'templates',
-            BASE_DIR / 'myapp' / 'templates' / 'admin',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -55,7 +48,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'myapp.context_processors.version_info',
             ],
         },
     },
@@ -64,14 +56,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mysite.wsgi.application'
 ASGI_APPLICATION = 'mysite.asgi.application'
 
+# Supabase Configuration
+SUPABASE_URL = os.environ.get('SUPABASE_URL', "https://jarkkipkxswaqnadblvq.supabase.co")
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcmtraXBreHN3YXFuYWRibHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3NTcyODcsImV4cCI6MjA0ODMzMzI4N30.sj0JjhHnuHgAvlSoHLNIJKpKKW-LqXnTpmhMKSPshaI")
 
+# Remove or comment out this line
+# supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Update database configuration to use SQLite3
+# Update database configuration
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': 'db.jarkkipkxswaqnadblvq.supabase.co',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': SUPABASE_KEY,
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
 }
 
 # Password validation

@@ -21,6 +21,7 @@ from .utils import get_device_type
 from django.views.decorators.http import require_POST
 from django.db import DatabaseError
 from django.template.loader import render_to_string
+from .utils.changelog import get_changelog
 
 ROLE_INFO = {
     'MAFIA': {
@@ -588,3 +589,10 @@ def handle_db_operation(view_func):
 def your_view(request):
     # Your view code here
     pass
+
+def changelog(request):
+    """Display the changelog page"""
+    changelog_data = get_changelog()
+    return render(request, 'myapp/changelog.html', {
+        'changelog': changelog_data
+    })
