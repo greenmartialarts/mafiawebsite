@@ -4,6 +4,13 @@ def get_changelog():
     """
     return [
         {
+            'version': '1.2.0',
+            'date': '2024-11-28',
+            'changes': [
+                'Added Cloudflare Turnstile for captcha for login, register, and join room',
+            ]
+        },
+        {
             'version': '1.1.1',
             'date': '2024-11-28',
             'changes': [

@@ -22,6 +22,9 @@ from django.views.decorators.http import require_POST
 from django.db import DatabaseError
 from django.template.loader import render_to_string
 from .utils.changelog import get_changelog
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
+from .utils.turnstile import verify_turnstile
 
 ROLE_INFO = {
     'MAFIA': {
@@ -112,43 +115,48 @@ def join_room(request):
     if request.method == 'POST':
         room_form = JoinRoomForm(request.POST)
         player_count = int(request.POST.get('player_count', 1))
+        token = request.POST.get('cf-turnstile-response')
         
-        if room_form.is_valid():
-            room_code = room_form.cleaned_data['room_code']
-            password = room_form.cleaned_data['password']
-            
-            try:
-                room = Room.objects.get(room_code=room_code)
+        try:
+            verify_turnstile(token)
+            if room_form.is_valid():
+                room_code = room_form.cleaned_data['room_code']
+                password = room_form.cleaned_data['password']
                 
-                # Check if user is banned
-                if request.user.is_authenticated and room.banned_users.filter(id=request.user.id).exists():
-                    messages.error(request, 'You are banned from this room')
-                    return redirect('home')
+                try:
+                    room = Room.objects.get(room_code=room_code)
+                    
+                    # Check if user is banned
+                    if request.user.is_authenticated and room.banned_users.filter(id=request.user.id).exists():
+                        messages.error(request, 'You are banned from this room')
+                        return redirect('home')
+                    
+                    # Check password if room is password protected
+                    if room.is_password_protected() and room.password != password:
+                        messages.error(request, 'Invalid password')
+                        return render(request, 'myapp/join_room.html', {
+                            'room_form': room_form
+                        })
+                    
+                    # Create players for this device
+                    if not request.session.session_key:
+                        request.session.create()
+                    
+                    for i in range(player_count):
+                        player_name = request.POST.get(f'player_name_{i}')
+                        if player_name:
+                            player = Player.objects.create(
+                                name=player_name,
+                                session_key=request.session.session_key,
+                                device_order=i
+                            )
+                            room.temp_players.add(player)
                 
-                # Check password if room is password protected
-                if room.is_password_protected() and room.password != password:
-                    messages.error(request, 'Invalid password')
-                    return render(request, 'myapp/join_room.html', {
-                        'room_form': room_form
-                    })
-                
-                # Create players for this device
-                if not request.session.session_key:
-                    request.session.create()
-                
-                for i in range(player_count):
-                    player_name = request.POST.get(f'player_name_{i}')
-                    if player_name:
-                        player = Player.objects.create(
-                            name=player_name,
-                            session_key=request.session.session_key,
-                            device_order=i
-                        )
-                        room.temp_players.add(player)
-                
-                return redirect('waiting_room', room_code=room_code)
-            except Room.DoesNotExist:
-                messages.error(request, 'Invalid room code')
+                    return redirect('waiting_room', room_code=room_code)
+                except Room.DoesNotExist:
+                    messages.error(request, 'Invalid room code')
+        except ValidationError as e:
+            room_form.add_error(None, str(e))
     else:
         room_form = JoinRoomForm()
     
@@ -383,10 +391,15 @@ def check_room_status(request, room_code):
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)  # Log the user in after registration
-            return redirect('home')
+        token = request.POST.get('cf-turnstile-response')
+        try:
+            verify_turnstile(token)
+            if form.is_valid():
+                user = form.save()
+                login(request, user)
+                return redirect('home')
+        except ValidationError as e:
+            form.add_error(None, str(e))
     else:
         form = CustomUserCreationForm()
     return render(request, 'myapp/register.html', {'form': form})
@@ -596,3 +609,15 @@ def changelog(request):
     return render(request, 'myapp/changelog.html', {
         'changelog': changelog_data
     })
+
+class CustomLoginView(LoginView):
+    template_name = 'myapp/login.html'
+    
+    def form_valid(self, form):
+        token = self.request.POST.get('cf-turnstile-response')
+        try:
+            verify_turnstile(token)
+        except ValidationError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        return super().form_valid(form)

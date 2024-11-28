@@ -1,6 +1,10 @@
 {% extends 'myapp/base.html' %}
 {% load widget_tweaks %}
 
+{% block extra_head %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center fade-in">
     <div class="col-md-6">
@@ -33,6 +37,11 @@
                             {% render_field field class="form-control bg-dark text-light border-secondary" placeholder=field.label %}
                         </div>
                     {% endfor %}
+                    
+                    <div class="mb-4 d-flex justify-content-center">
+                        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div>
+                    </div>
+
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg hover-effect">
                             <i class="fas fa-sign-in-alt me-2"></i>Login

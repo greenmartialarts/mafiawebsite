@@ -144,4 +144,13 @@ LOGGING = {
 }
 
 # Add admin emails to receive error notifications
-ADMINS = [('Your Name', 'your.email@example.com')] 
+ADMINS = [('Your Name', 'your.email@example.com')]
+
+# Add these settings
+RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY')
+RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY')
+RECAPTCHA_REQUIRED_SCORE = 0.85  # Adjust this threshold as needed (0.0 to 1.0)
+
+# Cloudflare Turnstile settings
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY')
