@@ -20,6 +20,62 @@ from django.urls import reverse
 from .utils import get_device_type
 from django.views.decorators.http import require_POST
 from django.db import DatabaseError
+from django.template.loader import render_to_string
+
+ROLE_INFO = {
+    'MAFIA': {
+        'description': 'A member of the mafia team trying to eliminate the villagers.',
+        'objective': 'Eliminate all villagers while keeping your identity hidden.',
+        'tips': [
+            'Stay calm during discussions',
+            'Create believable alibis',
+            'Coordinate with other mafia members',
+            'Try to cast suspicion on others',
+            'Be careful not to defend other mafia members too obviously'
+        ],
+        'icon': 'fa-skull',
+        'color': 'danger'
+    },
+    'DOCTOR': {
+        'description': 'A villager with the power to save one person each night.',
+        'objective': 'Keep villagers alive and help identify the mafia.',
+        'tips': [
+            'Pay attention to voting patterns',
+            'Keep your identity hidden from the mafia',
+            'Consider saving yourself occasionally',
+            'Watch for patterns in mafia attacks',
+            'Coordinate with the cop when revealed'
+        ],
+        'icon': 'fa-user-md',
+        'color': 'success'
+    },
+    'COP': {
+        'description': 'A villager who can investigate one player each night.',
+        'objective': 'Identify mafia members and lead the village to victory.',
+        'tips': [
+            'Keep notes of your investigations',
+            'Be strategic about revealing your findings',
+            'Watch for suspicious behavior',
+            'Consider the timing of revealing your role',
+            'Build trust with confirmed villagers'
+        ],
+        'icon': 'fa-user-shield',
+        'color': 'info'
+    },
+    'VILLAGER': {
+        'description': 'A regular townsperson trying to identify the mafia.',
+        'objective': 'Work with other villagers to identify and eliminate all mafia members.',
+        'tips': [
+            'Pay attention to everyone\'s behavior',
+            'Take notes during discussions',
+            'Share your observations',
+            'Vote based on evidence, not emotions',
+            'Support the special roles when they reveal themselves'
+        ],
+        'icon': 'fa-user',
+        'color': 'light'
+    }
+}
 
 def home(request):
     return render(request, 'myapp/home.html')
@@ -181,15 +237,19 @@ def role_display(request, room_code):
             temp_player=current_player,
             room=room
         )
+        # Add role information to context
+        role_info = ROLE_INFO.get(role_assignment.role, {})
     else:
         role_assignment = None
+        role_info = None
         show_role = False
     
     return render(request, 'myapp/role_display.html', {
         'room': room,
         'current_player': current_player,
         'role_assignment': role_assignment,
-        'show_role': show_role
+        'show_role': show_role,
+        'role_info': role_info
     })
 
 def leave_room(request, room_code):
@@ -224,46 +284,56 @@ def get_player_list(request, room_code):
     
     player_list_html = ''
     for player in players:
-        if hasattr(player, 'username'):
+        # Determine if player is host
+        is_player_host = (isinstance(player, User) and player == room.host) or \
+                        (isinstance(player, Player) and player.name == room.host.username)
+        
+        # Get player name
+        if isinstance(player, User):
             name = player.username
-            # Show kick/ban buttons for registered users (except host)
-            if is_host and player != room.host:
-                host_badge = f'''
+            player_id = player.id
+        else:
+            name = player.name
+            player_id = player.id
+            
+        # Set action buttons based on player type and host status
+        if is_player_host:
+            # Host badge only, no action buttons
+            action_buttons = '<span class="badge bg-primary"><i class="fas fa-crown me-1"></i>Host</span>'
+        elif is_host:
+            # Show appropriate action buttons for non-host players
+            if isinstance(player, User):
+                # Registered users get kick and ban buttons
+                action_buttons = f'''
                     <div class="btn-group">
-                        <a href="{reverse("kick_player", kwargs={"room_code": room.room_code, "player_id": player.id})}"
+                        <a href="{reverse("kick_player", kwargs={"room_code": room.room_code, "player_id": player_id})}"
                            class="btn btn-sm btn-warning"
-                           onclick="return confirm('Are you sure you want to kick {player.username}?')">
+                           onclick="return confirm('Are you sure you want to kick {name}?')">
                             <i class="fas fa-user-times me-1"></i>Kick
                         </a>
-                        <a href="{reverse('ban_player', kwargs={'room_code': room.room_code, 'player_id': player.id})}"
+                        <a href="{reverse('ban_player', kwargs={'room_code': room.room_code, 'player_id': player_id})}"
                            class="btn btn-sm btn-danger"
-                           onclick="return confirm('Are you sure you want to ban {player.username}? They will not be able to rejoin this room.')">
+                           onclick="return confirm('Are you sure you want to ban {name}? They will not be able to rejoin this room.')">
                             <i class="fas fa-ban me-1"></i>Ban
                         </a>
                     </div>
                 '''
-            elif player == room.host:
-                host_badge = '<span class="badge bg-primary"><i class="fas fa-crown me-1"></i>Host</span>'
             else:
-                host_badge = ''
-        else:
-            name = player.name
-            # Show only kick button for temporary players
-            if is_host:
-                host_badge = f'''
-                    <a href="{reverse("kick_player", kwargs={"room_code": room.room_code, "player_id": player.id})}"
+                # Temporary players only get kick button
+                action_buttons = f'''
+                    <a href="{reverse("kick_player", kwargs={"room_code": room.room_code, "player_id": player_id})}"
                        class="btn btn-sm btn-warning"
-                       onclick="return confirm('Are you sure you want to kick {player.name}?')">
+                       onclick="return confirm('Are you sure you want to kick {name}?')">
                         <i class="fas fa-user-times me-1"></i>Kick
                     </a>
                 '''
-            else:
-                host_badge = ''
+        else:
+            action_buttons = ''
 
         player_list_html += f'''
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-user me-2"></i>{name}</span>
-                {host_badge}
+                {action_buttons}
             </li>
         '''
     
@@ -392,53 +462,54 @@ def bug_detail(request, bug_id):
 @login_required
 def kick_player(request, room_code, player_id):
     room = get_object_or_404(Room, room_code=room_code)
+    
+    # Verify that the request is from the host
     if request.user != room.host:
         messages.error(request, 'Only the host can kick players')
         return redirect('waiting_room', room_code=room_code)
     
-    # First try to find and kick a registered user
-    try:
-        player = User.objects.get(id=player_id)
-        if player == room.host:
-            messages.error(request, 'Cannot kick the host')
-            return redirect('waiting_room', room_code=room_code)
-        
-        room.players.remove(player)
-        messages.success(request, f'{player.username} has been kicked')
+    # Get the player to kick (could be User or TempPlayer)
+    kicked_user = get_object_or_404(User, id=player_id)
+    
+    # Prevent host from kicking themselves
+    if kicked_user == room.host:
+        messages.error(request, 'Host cannot kick themselves')
         return redirect('waiting_room', room_code=room_code)
-    except User.DoesNotExist:
-        pass
     
-    # If no registered user found, try to find and kick a temporary player
-    try:
-        temp_player = Player.objects.get(id=player_id)
-        room.temp_players.remove(temp_player)
-        temp_player.delete()
-        messages.success(request, f'{temp_player.name} has been kicked')
-    except Player.DoesNotExist:
-        messages.error(request, 'Player not found')
-    
+    # Remove the player from the room
+    if kicked_user in room.players.all():
+        room.players.remove(kicked_user)
+    elif kicked_user in room.temp_players.all():
+        room.temp_players.remove(kicked_user)
+        
+    messages.success(request, f'Successfully kicked {kicked_user.username or kicked_user.name}')
     return redirect('waiting_room', room_code=room_code)
 
-@login_required
+@login_required 
 def ban_player(request, room_code, player_id):
     room = get_object_or_404(Room, room_code=room_code)
+    
+    # Verify that the request is from the host
     if request.user != room.host:
         messages.error(request, 'Only the host can ban players')
         return redirect('waiting_room', room_code=room_code)
     
-    try:
-        player = User.objects.get(id=player_id)
-        if player == room.host:
-            messages.error(request, 'Cannot ban the host')
-            return redirect('waiting_room', room_code=room_code)
-        
-        room.players.remove(player)
-        room.banned_users.add(player)
-        messages.success(request, f'{player.username} has been banned')
-    except User.DoesNotExist:
-        messages.error(request, 'Player not found')
+    # Get the player to ban
+    banned_user = get_object_or_404(User, id=player_id)
     
+    # Prevent host from banning themselves
+    if banned_user == room.host:
+        messages.error(request, 'Host cannot ban themselves')
+        return redirect('waiting_room', room_code=room_code)
+    
+    # Remove and ban the player
+    if banned_user in room.players.all():
+        room.players.remove(banned_user)
+    elif banned_user in room.temp_players.all():
+        room.temp_players.remove(banned_user)
+        
+    room.banned_players.add(banned_user)
+    messages.success(request, f'Successfully banned {banned_user.username or banned_user.name}')
     return redirect('waiting_room', room_code=room_code)
 
 def mark_role_viewed(request, room_code):

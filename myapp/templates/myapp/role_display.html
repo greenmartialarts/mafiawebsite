@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="row justify-content-center fade-in">
-    <div class="col-md-6">
+    <div class="col-md-8">
         <div class="card bg-dark text-light border-secondary">
             <div class="card-header text-center border-secondary">
                 <h2 class="mb-0">
@@ -14,48 +14,44 @@
                     {% if show_role %}
                         <h3 class="mb-4 text-primary">{{ current_player.name }}'s Role</h3>
                         <div class="role-icon mb-4 animate__animated animate__bounceIn">
-                            {% if role_assignment.role == 'MAFIA' %}
-                                <i class="fas fa-skull fa-4x text-danger glow-danger"></i>
-                            {% elif role_assignment.role == 'DOCTOR' %}
-                                <i class="fas fa-user-md fa-4x text-success glow-success"></i>
-                            {% elif role_assignment.role == 'COP' %}
-                                <i class="fas fa-shield-alt fa-4x text-primary glow-primary"></i>
-                            {% else %}
-                                <i class="fas fa-user fa-4x text-light glow-light"></i>
-                            {% endif %}
+                            <i class="fas {{ role_info.icon }} fa-4x text-{{ role_info.color }} glow-{{ role_info.color }}"></i>
                         </div>
-                        <h3 class="mb-4 role-text">
-                            You are a 
-                            <span class="
-                                {% if role_assignment.role == 'MAFIA' %}text-danger
-                                {% elif role_assignment.role == 'DOCTOR' %}text-success
-                                {% elif role_assignment.role == 'COP' %}text-primary
-                                {% else %}text-light{% endif %}
-                            ">
-                                {{ role_assignment.role }}
-                            </span>
-                        </h3>
+                        <h4 class="text-{{ role_info.color }} mb-4">{{ role_assignment.role }}</h4>
                         
-                        <button class="btn btn-primary btn-lg hover-effect" onclick="hideAndContinue()">
-                            <i class="fas fa-eye-slash me-2"></i>I've Seen My Role
+                        <!-- Role Information Card -->
+                        <div class="role-info mt-4">
+                            <div class="card bg-darker border-{{ role_info.color }} mb-4">
+                                <div class="card-body">
+                                    <h5 class="text-{{ role_info.color }} mb-3">Role Description</h5>
+                                    <p>{{ role_info.description }}</p>
+                                    <h5 class="text-{{ role_info.color }} mb-3">Objective</h5>
+                                    <p>{{ role_info.objective }}</p>
+                                    <h5 class="text-{{ role_info.color }} mb-3">Tips</h5>
+                                    <ul class="list-unstyled">
+                                        {% for tip in role_info.tips %}
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-{{ role_info.color }} me-2"></i>
+                                                {{ tip }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="hideAndContinue()" class="btn btn-primary btn-lg mt-4">
+                            <i class="fas fa-check me-2"></i>I Understand My Role
                         </button>
                     {% else %}
-                        <h3 class="mb-4 text-warning">{{ current_player.name }}'s Turn</h3>
-                        <div class="alert alert-info bg-dark text-info border-info mb-4">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Make sure only {{ current_player.name }} can see the screen
-                        </div>
-                        <button class="btn btn-primary btn-lg hover-effect" onclick="showRole()">
-                            <i class="fas fa-eye me-2"></i>Show My Role
-                        </button>
+                        <h4 class="mb-4">{{ current_player.name }}, are you ready to see your role?</h4>
+                        <a href="?show_role=1" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye me-2"></i>Reveal My Role
+                        </a>
                     {% endif %}
                 {% else %}
-                    <div class="alert alert-success bg-dark text-success border-success">
-                        <h4><i class="fas fa-check-circle me-2"></i>All players on this device have seen their roles!</h4>
-                        <p class="mb-0">You can now start playing the game.</p>
-                    </div>
-                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg mt-3 hover-effect">
-                        <i class="fas fa-home me-2"></i>Go Home
+                    <h4 class="text-muted">All players have viewed their roles</h4>
+                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-home me-2"></i>Back to Home
                     </a>
                 {% endif %}
             </div>
@@ -64,55 +60,41 @@
 </div>
 
 <style>
-.hover-effect {
-    transition: all 0.3s ease;
-    transform: scale(1);
-}
-
-.hover-effect:hover {
-    transform: scale(1.05);
+.bg-darker {
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .glow-danger {
-    filter: drop-shadow(0 0 10px rgba(220, 53, 69, 0.5));
+    text-shadow: 0 0 1px var(--bs-danger), 0 0 2px var(--bs-danger);
 }
 
 .glow-success {
-    filter: drop-shadow(0 0 10px rgba(40, 167, 69, 0.5));
+    text-shadow: 0 0 1px var(--bs-success), 0 0 2px var(--bs-success);
 }
 
-.glow-primary {
-    filter: drop-shadow(0 0 10px rgba(0, 123, 255, 0.5));
+.glow-info {
+    text-shadow: 0 0 1px var(--bs-info), 0 0 2px var(--bs-info);
 }
 
 .glow-light {
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    text-shadow: 0 0 1px var(--bs-light), 0 0 2px var(--bs-light);
 }
 
-.role-text {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+.role-info {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease forwards;
+    animation-delay: 1s;
 }
 
-.card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.animate__animated {
-    animation-duration: 1s;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
 
@@ -125,6 +107,7 @@ function hideAndContinue() {
     fetch('/role/{{ room.room_code }}/mark-viewed/', {
         method: 'POST',
         headers: {
+            'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
         }
     })
@@ -133,6 +116,10 @@ function hideAndContinue() {
         if (data.redirect) {
             window.location.href = '{% url "role_display" room_code=room.room_code %}';
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
     });
 }
 </script>

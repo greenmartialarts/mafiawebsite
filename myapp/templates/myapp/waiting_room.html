@@ -9,7 +9,13 @@
                     <i class="fas fa-users me-2"></i>Waiting Room
                 </h2>
                 <div class="mt-2">
-                    <span class="badge bg-secondary">Room Code: {{ room.room_code }}</span>
+                    <span class="badge bg-secondary">Room Code: 
+                        <span id="roomCode" class="text-white" role="button" onclick="copyRoomCode()" 
+                              style="cursor: pointer;" title="Click to copy">
+                            {{ room.room_code }}
+                            <i class="fas fa-copy ms-2"></i>
+                        </span>
+                    </span>
                 </div>
             </div>
             <div class="card-body">
@@ -136,6 +142,37 @@
 .badge:hover {
     transform: scale(1.1);
 }
+
+#roomCode {
+    transition: all 0.3s ease;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: white !important;
+}
+
+#roomCode:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#roomCode:active {
+    transform: scale(0.95);
+}
+
+.copy-feedback {
+    animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.neon-green {
+    color: #39ff14 !important; /* Bright/neon green */
+    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14; /* Neon glow effect */
+}
 </style>
 
 <script>
@@ -225,6 +262,27 @@
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while starting the game');
+        });
+    }
+
+    function copyRoomCode() {
+        const roomCode = "{{ room.room_code }}";
+        navigator.clipboard.writeText(roomCode).then(() => {
+            // Show feedback tooltip
+            const codeElement = document.getElementById('roomCode');
+            const originalText = codeElement.innerHTML;
+            codeElement.innerHTML = `
+                {{ room.room_code }}
+                <i class="fas fa-check ms-2 neon-green"></i>
+            `;
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                codeElement.innerHTML = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy room code:', err);
+            alert('Failed to copy room code. Please try again.');
         });
     }
 </script>
