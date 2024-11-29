@@ -27,4 +27,7 @@ urlpatterns = [
     path('role/<str:room_code>/mark-viewed/', views.mark_role_viewed, name='mark_role_viewed'),
     path('room/<str:room_code>/update-roles/', views.update_roles, name='update_roles'),
     path('changelog/', views.changelog, name='changelog'),
+    path('profile/', views.profile, name='profile'),
+    path('verify-email/', views.verify_email, name='verify_email'),
+    path('resend-verification/', views.resend_verification, name='resend_verification'),
 ] 

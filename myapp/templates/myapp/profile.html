@@ -1,0 +1,105 @@
+{% extends 'myapp/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-6">
+        <div class="card bg-dark text-light border-secondary hover-card">
+            <div class="card-header text-center border-secondary">
+                <h2 class="mb-0">
+                    <i class="fas fa-user-circle me-2"></i>My Profile
+                </h2>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} bg-dark">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-user me-2"></i>Username
+                        </label>
+                        <input type="text" 
+                               class="form-control bg-dark text-light border-secondary" 
+                               value="{{ user.username }}" 
+                               readonly>
+                        <small class="form-text text-muted">Username cannot be changed</small>
+                    </div>
+
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-user-tag me-2"></i>First Name
+                        </label>
+                        {% render_field form.first_name class="form-control bg-dark text-light border-secondary" %}
+                    </div>
+
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-user-tag me-2"></i>Last Name
+                        </label>
+                        {% render_field form.last_name class="form-control bg-dark text-light border-secondary" %}
+                    </div>
+
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-envelope me-2"></i>Email
+                        </label>
+                        {% render_field form.email class="form-control bg-dark text-light border-secondary" %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg hover-effect">
+                            <i class="fas fa-save me-2"></i>Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-effect {
+    transition: all 0.3s ease;
+    transform: scale(1);
+}
+
+.hover-effect:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.hover-card {
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.input-group-hover {
+    transition: all 0.3s ease;
+}
+
+.input-group-hover:focus-within {
+    transform: translateX(10px);
+}
+
+.form-control {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: scale(1.02);
+}
+</style>
+{% endblock %} 
