@@ -28,4 +28,9 @@ urlpatterns = [
     path('room/<str:room_code>/update-roles/', views.update_roles, name='update_roles'),
     path('changelog/', views.changelog, name='changelog'),
     path('profile/', views.profile, name='profile'),
+<<<<<<< HEAD
+=======
+    path('verify-email/', views.verify_email, name='verify_email'),
+    path('resend-verification/', views.resend_verification, name='resend_verification'),
+>>>>>>> b148b0433a12da1cbb3f068990104e28eb3433aa
 ] 
