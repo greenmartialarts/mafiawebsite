@@ -4,8 +4,8 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Room, RoleAssignment, Player, BugReport
-from .forms import RoomCreationForm, JoinRoomForm, PlayerForm, CustomUserCreationForm, BugReportForm
+from .models import Room, RoleAssignment, Player, BugReport, EmailVerification
+from .forms import RoomCreationForm, JoinRoomForm, PlayerForm, CustomUserCreationForm, BugReportForm, UserProfileForm
 import random
 import string
 from channels.layers import get_channel_layer
@@ -25,6 +25,9 @@ from .utils.changelog import get_changelog
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ValidationError
 from .utils.turnstile import verify_turnstile
+from django.core.mail import send_mail
+from django.utils.html import strip_tags
+from django.conf import settings
 
 ROLE_INFO = {
     'MAFIA': {
@@ -395,14 +398,88 @@ def register(request):
         try:
             verify_turnstile(token)
             if form.is_valid():
-                user = form.save()
-                login(request, user)
-                return redirect('home')
+                user = form.save(commit=False)
+                user.is_active = False  # User can't login until email is verified
+                user.first_name = form.cleaned_data['first_name']
+                user.last_name = form.cleaned_data['last_name']
+                user.email = form.cleaned_data['email']
+                user.save()
+
+                # Generate verification code
+                code = EmailVerification.generate_code()
+                EmailVerification.objects.create(user=user, code=code)
+
+                # Send verification email
+                html_message = render_to_string('myapp/email/verification_email.html', {
+                    'code': code
+                })
+                plain_message = strip_tags(html_message)
+                
+                send_mail(
+                    'Verify your Mafia Game email',
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=html_message
+                )
+
+                return redirect('verify_email')
         except ValidationError as e:
             form.add_error(None, str(e))
     else:
         form = CustomUserCreationForm()
     return render(request, 'myapp/register.html', {'form': form})
+
+def verify_email(request):
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        try:
+            verification = EmailVerification.objects.get(
+                code=code,
+                is_verified=False,
+                created_at__gte=timezone.now() - timedelta(days=1)
+            )
+            user = verification.user
+            user.is_active = True
+            user.save()
+            verification.is_verified = True
+            verification.save()
+            login(request, user)
+            messages.success(request, 'Email verified successfully! Welcome to Mafia Game!')
+            return redirect('home')
+        except EmailVerification.DoesNotExist:
+            messages.error(request, 'Invalid or expired verification code.')
+    
+    return render(request, 'myapp/verify_email.html', {
+        'email': request.user.email if request.user.is_authenticated else None
+    })
+
+@login_required
+def resend_verification(request):
+    if request.method == 'POST':
+        if not request.user.is_active:
+            verification = EmailVerification.objects.get(user=request.user)
+            verification.code = EmailVerification.generate_code()
+            verification.created_at = timezone.now()
+            verification.save()
+
+            # Resend verification email
+            html_message = render_to_string('myapp/email/verification_email.html', {
+                'code': verification.code
+            })
+            plain_message = strip_tags(html_message)
+            
+            send_mail(
+                'Verify your Mafia Game email',
+                plain_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [request.user.email],
+                html_message=html_message
+            )
+            
+            messages.success(request, 'A new verification code has been sent to your email.')
+    
+    return redirect('verify_email')
 
 @login_required
 def change_password(request):
@@ -621,3 +698,16 @@ class CustomLoginView(LoginView):
             form.add_error(None, str(e))
             return self.form_invalid(form)
         return super().form_valid(form)
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    return render(request, 'myapp/profile.html', {'form': form})

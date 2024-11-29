@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import certifi
+import ssl
 
    # Load the variables from the .env file
 load_dotenv()
@@ -12,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = os.getenv('DEBUG', default=False)
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
@@ -154,3 +156,17 @@ RECAPTCHA_REQUIRED_SCORE = 0.85  # Adjust this threshold as needed (0.0 to 1.0)
 # Cloudflare Turnstile settings
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY')
 TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY')
+
+# Email settings - Use console backend for development
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Comment out these SMTP settings for now
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+#EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+
+# Remove SSL context override
+# ssl._create_default_https_context = ssl._create_unverified_context

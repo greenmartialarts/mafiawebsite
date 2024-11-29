@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+import random
+import string
 
 class Player(models.Model):
     name = models.CharField(max_length=100)
@@ -101,3 +103,13 @@ class BugReport(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.priority} Priority"
+
+class EmailVerification(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    @staticmethod
+    def generate_code():
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
