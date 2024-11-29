@@ -399,31 +399,14 @@ def register(request):
             verify_turnstile(token)
             if form.is_valid():
                 user = form.save(commit=False)
-                user.is_active = False  # User can't login until email is verified
+                user.is_active = True  # Directly activate user
                 user.first_name = form.cleaned_data['first_name']
                 user.last_name = form.cleaned_data['last_name']
                 user.email = form.cleaned_data['email']
                 user.save()
-
-                # Generate verification code
-                code = EmailVerification.generate_code()
-                EmailVerification.objects.create(user=user, code=code)
-
-                # Send verification email
-                html_message = render_to_string('myapp/email/verification_email.html', {
-                    'code': code
-                })
-                plain_message = strip_tags(html_message)
-                
-                send_mail(
-                    'Verify your Mafia Game email',
-                    plain_message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    html_message=html_message
-                )
-
-                return redirect('verify_email')
+                login(request, user)
+                messages.success(request, 'Registration successful! Welcome to Mafia Game!')
+                return redirect('home')
         except ValidationError as e:
             form.add_error(None, str(e))
     else:
@@ -690,14 +673,23 @@ def changelog(request):
 class CustomLoginView(LoginView):
     template_name = 'myapp/login.html'
     
-    def form_valid(self, form):
-        token = self.request.POST.get('cf-turnstile-response')
+    def form_invalid(self, form):
+        messages.error(self.request, 'Invalid username or password. Please try again.')
+        return super().form_invalid(form)
+
+    def post(self, request, *args, **kwargs):
+        token = request.POST.get('cf-turnstile-response')
         try:
             verify_turnstile(token)
+            return super().post(request, *args, **kwargs)
         except ValidationError as e:
-            form.add_error(None, str(e))
-            return self.form_invalid(form)
-        return super().form_valid(form)
+            messages.error(request, str(e))
+            return self.render_to_response(self.get_context_data(form=self.get_form()))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['turnstile_site_key'] = settings.TURNSTILE_SITE_KEY
+        return context
 
 @login_required
 def profile(request):

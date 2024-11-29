@@ -15,31 +15,36 @@
                 </h2>
             </div>
             <div class="card-body">
-                {% if form.errors %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-danger bg-dark border-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                        </div>
+                    {% endfor %}
+                {% elif form.errors %}
                     <div class="alert alert-danger bg-dark border-danger">
-                        <i class="fas fa-exclamation-circle me-2"></i>Please correct the errors below.
+                        <i class="fas fa-exclamation-circle me-2"></i>Invalid username or password. Please try again.
                     </div>
                 {% endif %}
                 
                 <form method="post">
                     {% csrf_token %}
-                    {% for field in form %}
-                        <div class="mb-4 input-group-hover">
-                            <label class="form-label text-primary">
-                                <i class="fas {% if field.name == 'username' %}fa-user{% else %}fa-key{% endif %} me-2"></i>
-                                {{ field.label }}
-                            </label>
-                            {% if field.errors %}
-                                <div class="alert alert-danger bg-dark border-danger">
-                                    {{ field.errors }}
-                                </div>
-                            {% endif %}
-                            {% render_field field class="form-control bg-dark text-light border-secondary" placeholder=field.label %}
-                        </div>
-                    {% endfor %}
-                    
-                    <div class="mb-4 d-flex justify-content-center">
-                        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div>
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-user me-2"></i>Username
+                        </label>
+                        {% render_field form.username class="form-control bg-dark text-light border-secondary" placeholder="Enter your username" %}
+                    </div>
+
+                    <div class="mb-4 input-group-hover">
+                        <label class="form-label text-primary">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        {% render_field form.password class="form-control bg-dark text-light border-secondary" placeholder="Enter your password" %}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -48,12 +53,6 @@
                         </button>
                     </div>
                 </form>
-                <div class="text-center mt-4">
-                    <p class="mb-2 text-muted">Don't have an account?</p>
-                    <a href="{% url 'register' %}" class="btn btn-outline-primary hover-effect">
-                        <i class="fas fa-user-plus me-2"></i>Register Now
-                    </a>
-                </div>
             </div>
         </div>
     </div>
