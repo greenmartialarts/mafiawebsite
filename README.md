@@ -2,6 +2,16 @@
 
 A modern web application for managing and assigning roles in the party game Mafia. Streamline your game setup and focus on the fun!
 
+## Support
+
+This repository has been archived and is now read-only.
+
+All active development, maintenance, and the latest version of the code have moved to our new primary repository.
+
+⬇️ Please visit the new, up-to-date repository here:
+
+https://github.com/greenmartialarts/mafiagithub
+
 ## ✨ Features
 
 ### Core Features
